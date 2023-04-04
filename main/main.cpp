@@ -1,7 +1,8 @@
-#include <stdio.h>
+#include <cstdio>
+#include <dataset.h>
 
 int main() {
-    printf("hello world!");
-
+    Dataset d(100, 10);
+    d.print();
     return 0;
 }
