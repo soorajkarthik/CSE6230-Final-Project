@@ -35,14 +35,6 @@ inline void update_accumulator(vector<float> &acc, uint32_t centroid, vector<flo
     }
 } 
 
-#pragma omp declare reduction(vec_float_plus : vector<float> : \
-                                transform(omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), plus<float>())) \
-                                initializer(omp_priv = decltype(omp_orig)(omp_orig.size()))
-
-#pragma omp declare reduction(vec_int_plus : vector<uint32_t> : \
-                                transform(omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), plus<uint32_t>())) \
-                                initializer(omp_priv = decltype(omp_orig)(omp_orig.size()))
-
 KMeansResult Dataset::kmeans_openmp(uint32_t n_centroids, uint32_t max_iters, float tol) {
 
     vector<float> centroids = random_points(n_centroids);
@@ -57,12 +49,10 @@ KMeansResult Dataset::kmeans_openmp(uint32_t n_centroids, uint32_t max_iters, fl
 
         chrono::steady_clock::time_point begin = chrono::steady_clock::now();
 
-        vector<float> accumulator(centroids.size(), 0.0);
-        vector<uint32_t> counts(n_centroids, 0);
-
         // assignments
-        #pragma omp parallel for reduction(vec_float_plus: accumulator) reduction(vec_int_plus: counts)
+        #pragma omp parallel for
         for(uint32_t p = 0; p < n_points; p++) {
+
             uint32_t best_centroid = -1;
             float best_dist = numeric_limits<float>::max();
 
@@ -75,16 +65,32 @@ KMeansResult Dataset::kmeans_openmp(uint32_t n_centroids, uint32_t max_iters, fl
             }
 
             assignments[p] = best_centroid;
-
-            counts[best_centroid]++;
-            update_accumulator(accumulator, best_centroid, values, p, n_dims);
         }
 
         // recenter
-        #pragma omp simd
-        for(uint32_t i = 0; i < centroids.size(); i++) {
-            centroids[i] = accumulator[i] / counts[i / n_dims];
+        #pragma omp parallel for
+        for(uint32_t c = 0; c < n_centroids; c++) {
+            
+            uint32_t count;
+            vector<float> acc(n_dims, 0.0);
+
+            for(uint32_t p = 0; p < n_points; p++) {
+                if(assignments[p] == c) {
+                    count++;
+
+                    #pragma omp simd
+                    for(uint32_t d = 0; d < n_dims; d++) {
+                        acc[d] += values[V_OFFSET(p, d, n_dims)];
+                    }
+                }
+
+                #pragma omp simd
+                for(uint32_t d = 0; d < n_dims; d++) {
+                    centroids[V_OFFSET(c, d, n_dims)] = acc[d] / count;
+                }
+            }
         }
+        
 
         float curr_loss = compute_loss(values, n_points, centroids, n_centroids, n_dims, assignments);
         
