@@ -5,7 +5,7 @@
 #include <chrono>
 #include <algorithm>
 
-float dist_squared(vector<float> arr1, uint32_t p1, vector<float> arr2, uint32_t p2, uint32_t n_dims) {
+float dist_squared(float *arr1, uint32_t p1, float *arr2, uint32_t p2, uint32_t n_dims) {
     float dist = 0;
 
     #pragma omp simd reduction(+: dist) 
@@ -17,7 +17,7 @@ float dist_squared(vector<float> arr1, uint32_t p1, vector<float> arr2, uint32_t
     return dist;
 }
 
-float compute_loss(vector<float> points, uint32_t n_points, vector<float> centroids, uint32_t n_centroids, uint32_t n_dims, vector<uint32_t> assignments) {
+float compute_loss(float *points, uint32_t n_points, float *centroids, uint32_t n_centroids, uint32_t n_dims, uint32_t *assignments) {
     
     float loss = 0;
     #pragma omp parallel for reduction(+: loss)
@@ -28,17 +28,11 @@ float compute_loss(vector<float> points, uint32_t n_points, vector<float> centro
     return loss;
 }
 
-inline void update_accumulator(vector<float> &acc, uint32_t centroid, vector<float> values, uint32_t p, uint32_t n_dims) {
-    #pragma omp simd
-    for(uint32_t d = 0; d < n_dims; d++) {
-        acc[V_OFFSET(centroid, d, n_dims)] += values[V_OFFSET(p, d, n_dims)];
-    }
-} 
-
 KMeansResult Dataset::kmeans_openmp(uint32_t n_centroids, uint32_t max_iters, float tol) {
 
-    vector<float> centroids = random_points(n_centroids);
-    vector<uint32_t> assignments(n_points);
+    float *centroids = random_points(n_centroids);
+    uint32_t *assignments = (uint32_t *) malloc(n_points * sizeof(uint32_t)); 
+
     vector<float> loss_per_iter;
     vector<float> time_per_iter;
 
@@ -72,7 +66,7 @@ KMeansResult Dataset::kmeans_openmp(uint32_t n_centroids, uint32_t max_iters, fl
         for(uint32_t c = 0; c < n_centroids; c++) {
             
             uint32_t count;
-            vector<float> acc(n_dims, 0.0);
+            float acc[n_dims] = {0};
 
             for(uint32_t p = 0; p < n_points; p++) {
                 if(assignments[p] == c) {

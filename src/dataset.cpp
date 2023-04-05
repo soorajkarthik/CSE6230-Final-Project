@@ -6,7 +6,7 @@
 Dataset::Dataset() : n_points{0}, n_dims{0} {}
 
 Dataset::Dataset(uint32_t n_points, uint32_t n_dims) : n_points{n_points}, n_dims{n_dims} {
-    values.resize(n_points * n_dims);
+    values = (float *) malloc(n_points * n_dims * sizeof(float));
     randinit();
 }
 
@@ -30,23 +30,23 @@ void Dataset::print() {
     }
 }
 
-vector<float> Dataset::random_points(uint32_t num) {
+float* Dataset::random_points(uint32_t num) {
     vector<int> sample(n_points);
     iota(sample.begin(), sample.end(), 0);
     shuffle(sample.begin(), sample.end(), default_random_engine());
     
-    vector<float> res(num * n_dims);
+    float *res = (float *) malloc(num * n_dims * sizeof(float));
     for(uint32_t i = 0; i < num; i++) {
         int idx = sample[i];
         copy(
-            values.begin() + P_OFFSET(idx, n_dims), 
-            values.begin() + P_OFFSET(idx + 1, n_dims), 
-            res.begin() + P_OFFSET(i, n_dims)
+            values + P_OFFSET(idx, n_dims), 
+            values + P_OFFSET(idx + 1, n_dims), 
+            res + P_OFFSET(i, n_dims)
         );
     }
 
     return res;
 }
 
-KMeansResult::KMeansResult(vector<float> centroids, vector<uint32_t> assignments, vector<float> loss_per_iter, vector<float> time_per_iter) 
+KMeansResult::KMeansResult(float *centroids, uint32_t *assignments, vector<float> loss_per_iter, vector<float> time_per_iter) 
     : centroids{centroids}, assignments{assignments}, loss_per_iter{loss_per_iter}, time_per_iter{time_per_iter} {}
