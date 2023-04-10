@@ -19,7 +19,7 @@ void Dataset::randinit(uint32_t n_clusters) {
         random_device rd;
         mt19937 gen(rd());
         normal_distribution<float> gauss_dist(0, 1);
-        uniform_int_distribution<int> int_dist(-10, 10);
+        uniform_int_distribution<int> int_dist(-100, 100);
 
         float center[n_dims];
         for(uint32_t d = 0; d < n_dims; d++) {
