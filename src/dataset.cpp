@@ -53,11 +53,9 @@ float* Dataset::random_points(uint32_t num) {
     float *res = new float[num * n_dims];
     for(uint32_t i = 0; i < num; i++) {
         int idx = sample[i];
-        copy(
-            points + P_OFFSET(idx, n_dims), 
-            points + P_OFFSET(idx + 1, n_dims), 
-            res + P_OFFSET(i, n_dims)
-        );
+        for(uint32_t d = 0; d < n_dims; d++) {
+            res[V_OFFSET(i, d, n_dims)] = points[V_OFFSET(idx, d, n_dims)];
+        }
     }
 
     return res;

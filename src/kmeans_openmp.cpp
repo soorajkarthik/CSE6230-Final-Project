@@ -65,7 +65,7 @@ KMeansResult Dataset::kmeans_openmp(uint32_t n_centroids, uint32_t max_iters, fl
         #pragma omp parallel for
         for(uint32_t c = 0; c < n_centroids; c++) {
             
-            uint32_t count;
+            uint32_t count = 0;
             float acc[n_dims] = {0};
 
             for(uint32_t p = 0; p < n_points; p++) {
@@ -84,7 +84,6 @@ KMeansResult Dataset::kmeans_openmp(uint32_t n_centroids, uint32_t max_iters, fl
                 }
             }
         }
-        
 
         float curr_loss = compute_loss(points, n_points, centroids, n_centroids, n_dims, assignments);
         
