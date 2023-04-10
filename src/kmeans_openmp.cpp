@@ -31,7 +31,7 @@ float compute_loss(float *points, uint32_t n_points, float *centroids, uint32_t 
 KMeansResult Dataset::kmeans_openmp(uint32_t n_centroids, uint32_t max_iters, float tol) {
 
     float *centroids = random_points(n_centroids);
-    uint32_t *assignments = (uint32_t *) malloc(n_points * sizeof(uint32_t)); 
+    uint32_t *assignments = new uint32_t[n_points]; 
 
     vector<float> loss_per_iter;
     vector<float> time_per_iter;

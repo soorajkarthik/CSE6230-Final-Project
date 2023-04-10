@@ -6,7 +6,7 @@
 Dataset::Dataset() : n_points{0}, n_dims{0} {}
 
 Dataset::Dataset(uint32_t n_points, uint32_t n_dims) : n_points{n_points}, n_dims{n_dims} {
-    values = (float *) malloc(n_points * n_dims * sizeof(float));
+    values = new float[n_points * n_dims];
     randinit();
 }
 
@@ -35,7 +35,7 @@ float* Dataset::random_points(uint32_t num) {
     iota(sample.begin(), sample.end(), 0);
     shuffle(sample.begin(), sample.end(), default_random_engine());
     
-    float *res = (float *) malloc(num * n_dims * sizeof(float));
+    float *res = new float[num * n_dims];
     for(uint32_t i = 0; i < num; i++) {
         int idx = sample[i];
         copy(
