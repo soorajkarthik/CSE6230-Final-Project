@@ -2,7 +2,7 @@
 #include <fstream>
 
 void write_to_file(char *file, float *points, uint32_t n_points, uint32_t n_dims, float *centroids, uint32_t n_centroids, uint32_t *assignments) {
-    ofstream outfile(file, fstream::in);
+    ofstream outfile(file, fstream::out);
 
     outfile << n_points << " " << n_dims << endl;
     for(uint32_t p = 0; p < n_points; p++) {
@@ -12,7 +12,7 @@ void write_to_file(char *file, float *points, uint32_t n_points, uint32_t n_dims
         outfile << endl;
     }
 
-    outfile << n_centroids << n_dims << endl;
+    outfile << n_centroids << " " << n_dims << endl;
     for(uint32_t c = 0; c < n_centroids; c++) {
         for(uint32_t d = 0; d < n_dims; d++) {
             outfile << centroids[c * n_dims + d] << " ";
