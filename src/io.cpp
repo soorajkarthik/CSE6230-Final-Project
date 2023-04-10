@@ -28,5 +28,5 @@ void write_to_file(char *file, float *points, uint32_t n_points, uint32_t n_dims
 }
 
 void write_to_file(char *file, Dataset dataset, KMeansResult result) {
-    write_to_file(file, dataset.values, dataset.n_points, dataset.n_dims, result.centroids, result.n_centroids, result.assignments);
+    write_to_file(file, dataset.points, dataset.n_points, dataset.n_dims, result.centroids, result.n_centroids, result.assignments);
 }

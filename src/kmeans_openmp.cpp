@@ -51,7 +51,7 @@ KMeansResult Dataset::kmeans_openmp(uint32_t n_centroids, uint32_t max_iters, fl
             float best_dist = numeric_limits<float>::max();
 
             for(uint32_t c = 0; c < n_centroids; c++) {
-                float dist = dist_squared(values, p, centroids, c, n_dims);
+                float dist = dist_squared(points, p, centroids, c, n_dims);
                 if(dist < best_dist) {
                     best_dist = dist;
                     best_centroid = c;
@@ -74,7 +74,7 @@ KMeansResult Dataset::kmeans_openmp(uint32_t n_centroids, uint32_t max_iters, fl
 
                     #pragma omp simd
                     for(uint32_t d = 0; d < n_dims; d++) {
-                        acc[d] += values[V_OFFSET(p, d, n_dims)];
+                        acc[d] += points[V_OFFSET(p, d, n_dims)];
                     }
                 }
 
@@ -86,7 +86,7 @@ KMeansResult Dataset::kmeans_openmp(uint32_t n_centroids, uint32_t max_iters, fl
         }
         
 
-        float curr_loss = compute_loss(values, n_points, centroids, n_centroids, n_dims, assignments);
+        float curr_loss = compute_loss(points, n_points, centroids, n_centroids, n_dims, assignments);
         
         chrono::steady_clock::time_point end = chrono::steady_clock::now();
         chrono::duration<float> dur = chrono::duration_cast<chrono::milliseconds>(end - begin);

@@ -25,12 +25,12 @@ class Dataset {
     public:
         uint32_t n_points;
         uint32_t n_dims;
-        float *values;
+        float *points;
         
         Dataset();
-        Dataset(uint32_t n_points, uint32_t n_dims);
+        Dataset(uint32_t n_points, uint32_t n_dims, uint32_t n_clusters);
 
-        void randinit();
+        void randinit(uint32_t n_clusters);
         void print();
 
         float* random_points(uint32_t num);
