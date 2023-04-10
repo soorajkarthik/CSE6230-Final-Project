@@ -101,5 +101,5 @@ KMeansResult Dataset::kmeans_openmp(uint32_t n_centroids, uint32_t max_iters, fl
         prev_loss = curr_loss;
     }
 
-    return KMeansResult(centroids, assignments, loss_per_iter, time_per_iter);
+    return KMeansResult(centroids, n_centroids, assignments, loss_per_iter, time_per_iter);
 }

@@ -3,29 +3,30 @@
 
 #include <vector>
 #include <cstdint>
+
 #define V_OFFSET(p, d, n_dims) ((p) * (n_dims) + (d))
 #define P_OFFSET(p, n_dims) ((p) * (n_dims))
 
 using namespace std;
 
-
 class KMeansResult {
     public:
         float* centroids;
+        uint32_t n_centroids;
         uint32_t* assignments;
         vector<float> loss_per_iter;
         vector<float> time_per_iter;
 
-        KMeansResult(float *centroids, uint32_t *assignments, vector<float> loss_per_iter, vector<float> time_per_iter);
+        KMeansResult(float *centroids, uint32_t n_centroids, uint32_t *assignments, vector<float> loss_per_iter, vector<float> time_per_iter);
 };
 
-
 class Dataset {
-    uint32_t n_points;
-    uint32_t n_dims;
-    float *values;
 
     public:
+        uint32_t n_points;
+        uint32_t n_dims;
+        float *values;
+        
         Dataset();
         Dataset(uint32_t n_points, uint32_t n_dims);
 

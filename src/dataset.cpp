@@ -48,5 +48,10 @@ float* Dataset::random_points(uint32_t num) {
     return res;
 }
 
-KMeansResult::KMeansResult(float *centroids, uint32_t *assignments, vector<float> loss_per_iter, vector<float> time_per_iter) 
-    : centroids{centroids}, assignments{assignments}, loss_per_iter{loss_per_iter}, time_per_iter{time_per_iter} {}
+KMeansResult::KMeansResult(float *centroids, uint32_t n_centroids, uint32_t *assignments, vector<float> loss_per_iter, vector<float> time_per_iter) {
+    this->centroids = centroids;
+    this->n_centroids = n_centroids;
+    this->assignments = assignments;
+    this->loss_per_iter = loss_per_iter;
+    this->time_per_iter = time_per_iter;
+}
