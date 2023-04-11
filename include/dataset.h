@@ -18,6 +18,11 @@ class KMeansResult {
         vector<float> time_per_iter;
 
         KMeansResult(float *centroids, uint32_t n_centroids, uint32_t *assignments, vector<float> loss_per_iter, vector<float> time_per_iter);
+
+        bool operator!=(const KMeansResult& rhs);
+
+        // Adding for completeness, might not be performant
+        bool operator==(const KMeansResult& rhs);
 };
 
 class Dataset {

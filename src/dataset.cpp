@@ -68,3 +68,16 @@ KMeansResult::KMeansResult(float *centroids, uint32_t n_centroids, uint32_t *ass
     this->loss_per_iter = loss_per_iter;
     this->time_per_iter = time_per_iter;
 }
+
+bool KMeansResult::operator!=(const KMeansResult& rhs) {
+    if (n_centroids != rhs.n_centroids)
+        return true;
+
+    for (uint32_t i = 0; i < n_centroids; i++){
+        if (centroids[i] != rhs.centroids[i]){
+            return true;
+        }
+    }
+
+    return false;
+}
