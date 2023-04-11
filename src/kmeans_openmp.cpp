@@ -33,7 +33,6 @@ KMeansResult Dataset::kmeans_openmp(uint32_t n_centroids, uint32_t max_iters, fl
     float *centroids = random_points(n_centroids);
     uint32_t *assignments = new uint32_t[n_points]; 
 
-    vector<float> loss_per_iter;
     vector<float> time_per_iter;
 
     float prev_loss = numeric_limits<float>::max();
@@ -90,7 +89,6 @@ KMeansResult Dataset::kmeans_openmp(uint32_t n_centroids, uint32_t max_iters, fl
         chrono::steady_clock::time_point end = chrono::steady_clock::now();
         chrono::duration<float> dur = chrono::duration_cast<chrono::milliseconds>(end - begin);
         
-        loss_per_iter.push_back(curr_loss);
         time_per_iter.push_back(dur.count());
 
         if(iter > 0 && abs(prev_loss - curr_loss) / prev_loss < tol) {
@@ -100,5 +98,5 @@ KMeansResult Dataset::kmeans_openmp(uint32_t n_centroids, uint32_t max_iters, fl
         prev_loss = curr_loss;
     }
 
-    return KMeansResult(centroids, n_centroids, assignments, loss_per_iter, time_per_iter);
+    return KMeansResult(centroids, n_centroids, assignments, time_per_iter);
 }

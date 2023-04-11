@@ -36,6 +36,6 @@ centroids = np.array(centroids)
 colors = cm.get_cmap('hsv', n_centroids)
 
 plt.scatter(points[:, 0], points[:, 1], c=assignments, cmap=colors)
-plt.scatter(centroids[:, 0], centroids[:, 1], c='black')
+plt.scatter(centroids[:, 0], centroids[:, 1], c='black', marker="*")
 
 plt.show()
