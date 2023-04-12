@@ -6,6 +6,47 @@
 #define SHM_K (8)
 #define SHM_DIM (2)
 
+void host_to_device_init_transfer(
+    float *points, float *d_points, 
+    float *centroids, float *d_centroids,
+    uint32_t *assignments, uint32_t *d_assignments,
+    uint32_t n_points, uint32_t *d_n_points,
+    uint32_t n_centroids, uint32_t *d_n_centroids,
+    uint32_t n_dims, uint32_t *d_n_dims) {
+
+    cudaMalloc(&d_points,      n_points * n_dims * sizeof(float));
+    cudaMalloc(&d_centroids,   n_centroids * n_dims * sizeof(float));
+    cudaMalloc(&d_assignments, n_points * sizeof(uint32_t));
+    cudaMalloc(&d_n_points,    sizeof(uint32_t));
+    cudaMalloc(&d_n_centroids, sizeof(uint32_t));
+    cudaMalloc(&d_n_dims,      sizeof(uint32_t));
+
+    cudaMemcpy(d_points,      points,       n_points * n_dims * sizeof(float),    cudaMemcpyHostToDevice);
+    cudaMemcpy(d_centroids,   centroids,    n_centroids * n_dims * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_assignments, assignments,  n_points * sizeof(uint32_t),          cudaMemcpyHostToDevice);
+    cudaMemcpy(d_n_points,    &n_points,    sizeof(uint32_t),                     cudaMemcpyHostToDevice);
+    cudaMemcpy(d_n_centroids, &n_centroids, sizeof(uint32_t),                     cudaMemcpyHostToDevice);
+    cudaMemcpy(d_n_dims,      &n_dims, 	    sizeof(uint32_t),                     cudaMemcpyHostToDevice);
+}
+
+void device_to_host_transfer_free(
+    float *points, float *d_points, 
+    float *centroids, float *d_centroids,
+    uint32_t *assignments, uint32_t *d_assignments,
+    uint32_t n_points, uint32_t *d_n_points,
+    uint32_t n_centroids, uint32_t *d_n_centroids,
+    uint32_t n_dims, uint32_t *d_n_dims) {
+
+    cudaMemcpy(assignments, d_assignments, n_points * sizeof(uint32_t), cudaMemcpyDeviceToHost);
+
+    cudaFree(&d_points);
+    cudaFree(&d_centroids);
+    cudaFree(&d_assignments);
+    cudaFree(&d_n_points);
+    cudaFree(&d_n_centroids);
+    cudaFree(&d_n_dims);
+}
+
 __global__ void compute_assignments_kernel(
     float *__restrict__ points, 
     float *__restrict__ centroids, 
@@ -128,32 +169,27 @@ KMeansResult Dataset::kmeans_cuda(uint32_t n_centroids, uint32_t max_iters, floa
     float *d_points, *d_centroids;
     uint32_t *d_assignments, *d_n_points, *d_n_centroids, *d_n_dims;
     
-    cudaMalloc(&d_points,      n_points * n_dims * sizeof(float));
-    cudaMalloc(&d_centroids,   n_centroids * n_dims * sizeof(float));
-    cudaMalloc(&d_assignments, n_points * sizeof(uint32_t));
-    cudaMalloc(&d_n_points,    sizeof(uint32_t));
-    cudaMalloc(&d_n_centroids, sizeof(uint32_t));
-    cudaMalloc(&d_n_dims,      sizeof(uint32_t));
-
-    cudaMemcpy(d_points,      points,       n_points * n_dims * sizeof(float),    cudaMemcpyHostToDevice);
-    cudaMemcpy(d_centroids,   centroids,    n_centroids * n_dims * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_assignments, assignments,  n_points * sizeof(uint32_t),          cudaMemcpyHostToDevice);
-    cudaMemcpy(d_n_points,    &n_points,    sizeof(uint32_t),                     cudaMemcpyHostToDevice);
-    cudaMemcpy(d_n_centroids, &n_centroids, sizeof(uint32_t),                     cudaMemcpyHostToDevice);
-    cudaMemcpy(d_n_dims,      &n_dims, 	    sizeof(uint32_t),                     cudaMemcpyHostToDevice);
+    host_to_device_init_transfer(
+        points, d_points,
+        centroids, d_centroids,
+        assignments, d_assignments,
+        n_points, d_n_points,
+        n_centroids, d_n_centroids,
+        n_dims, d_n_dims
+    );
 
     compute_assignments_kernel<<< blocks, threads_per_block, shmem_size >>> (d_points, d_centroids, d_assignments, d_n_points, d_n_centroids, d_n_dims);
 
     cudaDeviceSynchronize();
+
+    device_to_host_transfer_free(
+        points, d_points,
+        centroids, d_centroids,
+        assignments, d_assignments,
+        n_points, d_n_points,
+        n_centroids, d_n_centroids,
+        n_dims, d_n_dims
+    );
     
-    cudaMemcpy(assignments, d_assignments, n_points * sizeof(uint32_t), cudaMemcpyDeviceToHost);
-
-    cudaFree(&d_points);
-    cudaFree(&d_centroids);
-    cudaFree(&d_assignments);
-    cudaFree(&d_n_points);
-    cudaFree(&d_n_centroids);
-    cudaFree(&d_n_dims);
-
     return KMeansResult(centroids, n_centroids, assignments, time_per_iter);
 }
