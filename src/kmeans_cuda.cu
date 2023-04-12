@@ -1,12 +1,18 @@
+#include <kmeans_cuda.h>
 #include <dataset.h>
-#include <cuda_runtime.h>
 #include <cstdio>
 
 #define PTS_PER_THREAD (4)
 #define SHM_K (8)
 #define SHM_DIM (2)
 
-__global__ void kmeans_calculate_assignments(float *points, float *centroids, uint32_t *assignments, uint32_t *n_points, uint32_t *n_centroids, uint32_t *n_dims) {
+__global__ void compute_assignments_kernel(
+    float *__restrict__ points, 
+    float *__restrict__ centroids, 
+    uint32_t *__restrict__ assignments, 
+    uint32_t *__restrict__ n_points, 
+    uint32_t *__restrict__ n_centroids, 
+    uint32_t *__restrict__ n_dims) {
 
     uint32_t K = *n_centroids, D = *n_dims;
 
@@ -136,7 +142,7 @@ KMeansResult Dataset::kmeans_cuda(uint32_t n_centroids, uint32_t max_iters, floa
     cudaMemcpy(d_n_centroids, &n_centroids, sizeof(uint32_t),                     cudaMemcpyHostToDevice);
     cudaMemcpy(d_n_dims,      &n_dims, 	    sizeof(uint32_t),                     cudaMemcpyHostToDevice);
 
-    kmeans_calculate_assignments<<< blocks, threads_per_block, shmem_size >>> (d_points, d_centroids, d_assignments, d_n_points, d_n_centroids, d_n_dims);
+    compute_assignments_kernel<<< blocks, threads_per_block, shmem_size >>> (d_points, d_centroids, d_assignments, d_n_points, d_n_centroids, d_n_dims);
 
     cudaDeviceSynchronize();
     
