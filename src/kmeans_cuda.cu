@@ -6,6 +6,7 @@ void host_to_device_init_transfer(
     float *points, float **d_points, 
     float *centroids, float **d_centroids,
     uint32_t *assignments, uint32_t **d_assignments,
+    float **d_accumulator, uint32_t **d_sizes,
     uint32_t n_points, uint32_t **d_n_points,
     uint32_t n_centroids, uint32_t **d_n_centroids,
     uint32_t n_dims, uint32_t **d_n_dims) {
@@ -13,6 +14,8 @@ void host_to_device_init_transfer(
     cudaMalloc(d_points,      n_points * n_dims * sizeof(float));
     cudaMalloc(d_centroids,   n_centroids * n_dims * sizeof(float));
     cudaMalloc(d_assignments, n_points * sizeof(uint32_t));
+    cudaMalloc(d_accumulator, n_centroids * n_dims * sizeof(float));
+    cudaMalloc(d_sizes,       n_centroids * sizeof(uint32_t));
     cudaMalloc(d_n_points,    sizeof(uint32_t));
     cudaMalloc(d_n_centroids, sizeof(uint32_t));
     cudaMalloc(d_n_dims,      sizeof(uint32_t));
@@ -29,15 +32,19 @@ void device_to_host_transfer_free(
     float *points, float **d_points, 
     float *centroids, float **d_centroids,
     uint32_t *assignments, uint32_t **d_assignments,
+    float **d_accumulator, uint32_t **d_sizes,
     uint32_t n_points, uint32_t **d_n_points,
     uint32_t n_centroids, uint32_t **d_n_centroids,
     uint32_t n_dims, uint32_t **d_n_dims) {
 
-    cudaMemcpy(assignments, *d_assignments, n_points * sizeof(uint32_t), cudaMemcpyDeviceToHost);
+    cudaMemcpy(centroids,   *d_centroids, n_centroids * n_dims * sizeof(float), cudaMemcpyDeviceToHost);
+    cudaMemcpy(assignments, *d_assignments, n_points * sizeof(uint32_t),        cudaMemcpyDeviceToHost);
 
     cudaFree(&d_points);
     cudaFree(&d_centroids);
     cudaFree(&d_assignments);
+    cudaFree(&d_accumulator);
+    cudaFree(&d_sizes);
     cudaFree(&d_n_points);
     cudaFree(&d_n_centroids);
     cudaFree(&d_n_dims);
@@ -240,13 +247,14 @@ KMeansResult Dataset::kmeans_cuda(uint32_t n_centroids, uint32_t max_iters, floa
     int blocks = n_points / (threads_per_block * PTS_PER_THREAD);
     size_t shmem_size = (threads_per_block * PTS_PER_THREAD * n_dims + SHM_K * SHM_DIM) * sizeof(float); 
 
-    float *d_points, *d_centroids;
-    uint32_t *d_assignments, *d_n_points, *d_n_centroids, *d_n_dims;
+    float *d_points, *d_centroids, *d_accumulator;
+    uint32_t *d_assignments, *d_sizes, *d_n_points, *d_n_centroids, *d_n_dims;
     
     host_to_device_init_transfer(
         points, &d_points,
         centroids, &d_centroids,
         assignments, &d_assignments,
+        &d_accumulator, &d_sizes,
         n_points, &d_n_points,
         n_centroids, &d_n_centroids,
         n_dims, &d_n_dims
@@ -260,6 +268,7 @@ KMeansResult Dataset::kmeans_cuda(uint32_t n_centroids, uint32_t max_iters, floa
         points, &d_points,
         centroids, &d_centroids,
         assignments, &d_assignments,
+        &d_accumulator, &d_sizes,
         n_points, &d_n_points,
         n_centroids, &d_n_centroids,
         n_dims, &d_n_dims
