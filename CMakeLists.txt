@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 
-project(cse6230- CUDA CXX)
+project(cse6230-final-project CUDA CXX)
 
 include(CheckLanguage)
 check_language(CUDA)
@@ -14,12 +14,13 @@ set(CMAKE_CUDA_STANDARD 11)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
 set(CMAKE_CUDA_POSITION_INDEPENDENT_CODE ON)
-set(CMAKE_CUDA_ARCHITECTURES 35 50 70 72)
+set(CMAKE_CUDA_ARCHITECTURES 70 72)
 set(CMAKE_CUDA_FLAGS_DEBUG "-G")
 set(CMAKE_CUDA_FLAG_RELEASE "-Wno-deprecated-gpu-targets")
 
-find_package(BLAS REQUIRED)
 find_package(CUDAToolkit REQUIRED)
 
 add_subdirectory(src)
 add_subdirectory(main)
+add_subdirectory(tests)
+add_subdirectory(lib/Catch2)
