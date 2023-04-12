@@ -4,6 +4,10 @@
 #include <cuda_runtime.h>
 #include <cstdint>
 
+#define PTS_PER_THREAD (4)
+#define SHM_K (16)
+#define SHM_DIM (16)
+
 void host_to_device_init_transfer(
     float *points, float *d_points, 
     float *centroids, float *d_centroids,

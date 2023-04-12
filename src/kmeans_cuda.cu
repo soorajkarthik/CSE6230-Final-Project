@@ -2,10 +2,6 @@
 #include <dataset.h>
 #include <cstdio>
 
-#define PTS_PER_THREAD (4)
-#define SHM_K (8)
-#define SHM_DIM (2)
-
 void host_to_device_init_transfer(
     float *points, float *d_points, 
     float *centroids, float *d_centroids,
