@@ -4,7 +4,7 @@
 #include <iostream>
 
 int main(int argc, char *argv[]) {
-    Dataset d(80, 2, 16);
+    Dataset d(4000, 2, 16);
 
     KMeansResult res_openmp = d.kmeans_openmp(16, 1000000, 1e-7);
     write_to_file(argv[1], d, res_openmp);

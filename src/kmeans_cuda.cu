@@ -8,7 +8,7 @@
 
 __global__ void kmeans_calculate_assignments(float *points, float *centroids, uint32_t *assignments, uint32_t *n_points, uint32_t *n_centroids, uint32_t *n_dims) {
 
-    uint32_t N = *n_points, K = *n_centroids, D = *n_dims;
+    uint32_t K = *n_centroids, D = *n_dims;
 
     extern __shared__ float shmem[];
 
@@ -54,7 +54,7 @@ __global__ void kmeans_calculate_assignments(float *points, float *centroids, ui
 
             // Load centroids into shared memory
             int k, d, p;
-            for(int shm_idx = tid; shm_idx < SHM_K * SHM_DIM; shm_idx += blockDim.x) {
+            for(int shm_idx = threadIdx.x; shm_idx < SHM_K * SHM_DIM; shm_idx += blockDim.x) {
                 
                 k = shm_idx / SHM_DIM;
                 d = shm_idx % SHM_DIM;
@@ -100,8 +100,6 @@ __global__ void kmeans_calculate_assignments(float *points, float *centroids, ui
             }
         }
     }
-
-    // printf("tid: %d:   %d, %d, %d, %d\n", tid, local_assignments[0], local_assignments[1], local_assignments[2], local_assignments[3]);
 
     // Write final assignments to global memory
     #pragma unroll
