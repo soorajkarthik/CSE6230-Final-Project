@@ -22,7 +22,7 @@ void host_to_device_init_transfer(
     cudaMemcpy(*d_assignments, assignments,  n_points * sizeof(uint32_t),          cudaMemcpyHostToDevice);
     cudaMemcpy(*d_n_points,    &n_points,    sizeof(uint32_t),                     cudaMemcpyHostToDevice);
     cudaMemcpy(*d_n_centroids, &n_centroids, sizeof(uint32_t),                     cudaMemcpyHostToDevice);
-    cudaMemcpy(*d_n_dims,      &n_dims, 	    sizeof(uint32_t),                     cudaMemcpyHostToDevice);
+    cudaMemcpy(*d_n_dims,      &n_dims, 	 sizeof(uint32_t),                     cudaMemcpyHostToDevice);
 }
 
 void device_to_host_transfer_free(
@@ -148,6 +148,84 @@ __global__ void compute_assignments_kernel(
     #pragma unroll
     for(int p = 0; p < PTS_PER_THREAD; p++) {
         assignments[point_idx + p] = local_assignments[p];
+    }
+}
+
+__device__ float *__restrict__ get_privatized_pointer(float *ptr, uint32_t n_vecs, uint32_t n_dims, uint32_t n_copies) {
+    
+    float *res = ptr;
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    int wid = tid / warpSize;
+    
+    // All processors in the same warp assigned to the same copy
+    res += (n_vecs * n_dims) * (wid % n_copies);
+
+    return res;
+} 
+
+__global__ void reduce_private_copies_kernel(float *result, uint32_t n_vecs, uint32_t n_dims, uint32_t n_copies) {
+
+    int size = n_vecs * n_dims;
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    int n_threads = blockDim.x * gridDim.x;
+
+    for(int i = tid; i < size; i += n_threads) {
+
+        float accumulator = result[i];
+        float *copy_ptr = result;
+
+        for(int copy = 1; copy < n_copies; copy++) {
+            copy_ptr += size;
+            accumulator += copy_ptr[i];
+        }
+
+        result[i] = accumulator;
+    }
+}
+
+__global__ void divide_centroids_kernel(float *centroids, uint32_t *counts, uint32_t n_centroids, uint32_t n_dims) {
+
+    int size = n_centroids * n_dims;
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    int n_threads = blockDim.x * gridDim.x;
+
+    for(int i = tid; i < size; i += n_threads) {
+        int k = i / n_dims;
+        float div = counts[k];
+
+        if(div > 0) {
+            centroids[i] /= div;
+        }
+    }
+}
+
+__global__ void accumulate_cluster_members_kernel(
+    float *points, 
+    float *centroids, 
+    uint32_t *assignments, 
+    uint32_t *counts, 
+    uint32_t n_points,
+    uint32_t n_centroids,
+    uint32_t n_dims) {
+
+    float *priv_centroids = get_privatized_pointer(centroids, n_centroids, n_dims, NUM_PRIV_COPIES);
+    
+    int size = n_points * n_dims;
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    int n_threads = blockDim.x * gridDim.x;
+
+    for(int i = tid; i < size; i += n_threads) {
+        
+        int dim = i % n_dims;
+        float val = points[i];
+        int cluster = assignments[i];
+        float *centroid_val_ptr = &priv_centroids[cluster * n_dims + dim];
+
+        atomicAdd(centroid_val_ptr, val);
+
+        if(dim == 0) {
+            atomicInc(&counts[cluster], ~0);
+        }
     }
 }
 
