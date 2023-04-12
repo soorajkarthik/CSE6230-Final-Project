@@ -20,6 +20,6 @@ TEST_CASE("Check CUDA assigments match OpenMP") {
     call_compute_assignments_kernel(dataset.points, centroids, cuda_assignments, n_points, n_centroids, n_dims);
 
     for(uint32_t i = 0; i < n_points; i++) {
-        REQUIRE((omp_assignments[i] = cuda_assignments[i]));
+        REQUIRE((omp_assignments[i] == cuda_assignments[i]));
     }
 }

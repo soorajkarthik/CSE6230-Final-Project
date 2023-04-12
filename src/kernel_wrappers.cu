@@ -10,12 +10,12 @@ void call_compute_assignments_kernel(float *points, float *centroids, uint32_t *
     size_t shmem_size = (threads_per_block * PTS_PER_THREAD * n_dims + SHM_K * SHM_DIM) * sizeof(float); 
 
     host_to_device_init_transfer(
-        points, d_points,
-        centroids, d_centroids,
-        assignments, d_assignments,
-        n_points, d_n_points,
-        n_centroids, d_n_centroids,
-        n_dims, d_n_dims
+        points, &d_points,
+        centroids, &d_centroids,
+        assignments, &d_assignments,
+        n_points, &d_n_points,
+        n_centroids, &d_n_centroids,
+        n_dims, &d_n_dims
     );
 
     compute_assignments_kernel<<< blocks, threads_per_block, shmem_size >>> (d_points, d_centroids, d_assignments, d_n_points, d_n_centroids, d_n_dims);
@@ -23,11 +23,11 @@ void call_compute_assignments_kernel(float *points, float *centroids, uint32_t *
     cudaDeviceSynchronize();
 
     device_to_host_transfer_free(
-        points, d_points,
-        centroids, d_centroids,
-        assignments, d_assignments,
-        n_points, d_n_points,
-        n_centroids, d_n_centroids,
-        n_dims, d_n_dims
+        points, &d_points,
+        centroids, &d_centroids,
+        assignments, &d_assignments,
+        n_points, &d_n_points,
+        n_centroids, &d_n_centroids,
+        n_dims, &d_n_dims
     );
 }
