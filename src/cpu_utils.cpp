@@ -60,17 +60,6 @@ void recenter_centroids(float *points, float *centroids, uint32_t *assignments, 
     }
 }
 
-float compute_loss(float *points, float *centroids, uint32_t *assignments, uint32_t n_points, uint32_t n_centroids, uint32_t n_dims) {
-
-    float loss = 0;
-    #pragma omp parallel for reduction(+: loss)
-    for(uint32_t p = 0; p < n_points; p++) {
-        loss += dist_squared(points, p, centroids, assignments[p], n_dims);
-    }
-
-    return loss;
-}
-
 void CpuTimer::start() {
     start_time = chrono::steady_clock::now();
 }
