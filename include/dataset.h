@@ -38,8 +38,8 @@ class Dataset {
         void print();
 
         float* random_points(uint32_t num);
-        KMeansResult kmeans_openmp(uint32_t n_centroids, uint32_t max_iters, float tol);
-        KMeansResult kmeans_cuda(uint32_t n_centroids, uint32_t max_iters, float tol);
+        KMeansResult kmeans_openmp(uint32_t n_centroids, uint32_t max_iters);
+        KMeansResult kmeans_cuda(uint32_t n_centroids, uint32_t max_iters);
 
 };
 

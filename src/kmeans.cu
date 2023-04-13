@@ -1,9 +1,41 @@
+#include <cpu_utils.h>
+#include <random>
+#include <cstring>
+#include <math.h>
+#include <chrono>
+#include <algorithm>
 #include <dataset.h>
 #include <kernels.h>
 #include <device_utils.h>
 #include <consts.h>
 
-KMeansResult Dataset::kmeans_cuda(uint32_t n_centroids, uint32_t max_iters, float tol) {
+KMeansResult Dataset::kmeans_openmp(uint32_t n_centroids, uint32_t max_iters) {
+
+    float *centroids = random_points(n_centroids);
+    uint32_t *assignments = new uint32_t[n_points]; 
+    
+    chrono::steady_clock::time_point begin, end;
+    chrono::duration<float> duration;
+    vector<float> time_per_iter;
+    
+    // kmeans iteration
+    for(uint32_t iter = 0; iter < max_iters; iter++) {
+
+         begin = chrono::steady_clock::now();
+
+        compute_assignments(points, centroids, assignments, n_points, n_centroids, n_dims);
+        recenter_centroids(points, centroids, assignments, n_points, n_centroids, n_dims);
+        
+        end = chrono::steady_clock::now();
+        duration = chrono::duration_cast<chrono::milliseconds>(end - begin);
+        
+        time_per_iter.push_back(duration.count());
+    }
+
+    return KMeansResult(centroids, n_centroids, assignments, time_per_iter);
+}
+
+KMeansResult Dataset::kmeans_cuda(uint32_t n_centroids, uint32_t max_iters) {
     float *centroids = random_points(n_centroids);
     uint32_t *assignments = new uint32_t[n_points]; 
 
