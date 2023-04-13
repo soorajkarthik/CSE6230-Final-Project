@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <cstdint>
-#include <kmeans_openmp.h>
+#include <cpu_utils.h>
 #include <kernel_wrappers.h>
 #include <dataset.h>
 

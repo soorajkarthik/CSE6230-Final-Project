@@ -1,5 +1,7 @@
 #include <kernel_wrappers.h>
-#include <kmeans_cuda.h>
+#include <device_utils.h>
+#include <kernels.h>
+#include <consts.h>
 
 void call_compute_assignments_kernel(float *points, float *centroids, uint32_t *assignments, uint32_t n_points, uint32_t n_centroids, uint32_t n_dims) {
     float *d_points, *d_centroids, *d_accumulator;

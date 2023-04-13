@@ -1,5 +1,5 @@
-#ifndef KMEANS_OPENMP_H
-#define KMEANS_OPENMP_H
+#ifndef CPU_UTILS_H
+#define CPU_UTILS_H
 
 #include <cstdint>
 

@@ -2,7 +2,7 @@
 
 #include <cstdint>
 #include <algorithm>
-#include <kmeans_openmp.h>
+#include <cpu_utils.h>
 #include <kernel_wrappers.h>
 #include <dataset.h>
 #include <cmath>
