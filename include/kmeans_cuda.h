@@ -48,9 +48,19 @@ __global__ void divide_centroids_kernel(
 
 __global__ void accumulate_cluster_members_kernel(
     float *points, 
-    float *centroids, 
+    float *accumulator, 
     uint32_t *assignments, 
     uint32_t *counts, 
+    uint32_t *n_points,
+    uint32_t *n_centroids,
+    uint32_t *n_dims);
+
+__global__ void fused_assignment_accumulate_kernel(    
+    float *points, 
+    float *centroids, 
+    float *accumulator, 
+    uint32_t *assignments, 
+    uint32_t *counts,
     uint32_t *n_points,
     uint32_t *n_centroids,
     uint32_t *n_dims);
