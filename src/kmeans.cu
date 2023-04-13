@@ -1,12 +1,9 @@
 #include <cpu_utils.h>
-#include <random>
-#include <cstring>
-#include <math.h>
-#include <algorithm>
 #include <dataset.h>
 #include <kernels.h>
 #include <device_utils.h>
 #include <consts.h>
+#define CEIL_DIV(A, B) (((A) + (B) - 1) / (B))
 
 KMeansResult Dataset::kmeans_openmp(uint32_t n_centroids, uint32_t max_iters) {
 
@@ -39,11 +36,11 @@ KMeansResult Dataset::kmeans_cuda(uint32_t n_centroids, uint32_t max_iters, bool
     CudaTimer timer;
     vector<float> time_per_iter;
 
-    int blocks_assignment = n_points / (THREADS_PER_BLOCK * PTS_PER_THREAD);
-    int blocks_accumulate = n_points * n_dims / (THREADS_PER_BLOCK * CALCS_PER_THREAD);
-    int blocks_reduce_divide = n_centroids * n_dims / (THREADS_PER_BLOCK * CALCS_PER_THREAD);
+    int blocks_assignment = CEIL_DIV(n_points, (THREADS_PER_BLOCK));
+    int blocks_accumulate = CEIL_DIV(n_points * n_dims, (THREADS_PER_BLOCK * CALCS_PER_THREAD));
+    int blocks_reduce_divide = CEIL_DIV(n_centroids * n_dims, (THREADS_PER_BLOCK * CALCS_PER_THREAD));
 
-    size_t shmem_size = (THREADS_PER_BLOCK * PTS_PER_THREAD * n_dims + SHM_K * SHM_DIM) * sizeof(float); 
+    size_t shmem_size = (THREADS_PER_BLOCK * n_dims + SHM_K * SHM_DIM) * sizeof(float); 
 
     float *d_points, *d_centroids, *d_accumulator;
     uint32_t *d_assignments, *d_counts, *d_n_points, *d_n_centroids, *d_n_dims;

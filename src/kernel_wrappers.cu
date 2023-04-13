@@ -8,8 +8,8 @@ void call_compute_assignments_kernel(float *points, float *centroids, uint32_t *
     uint32_t *d_assignments, *d_counts, *d_n_points, *d_n_centroids, *d_n_dims;
 
     int threads_per_block = 16;
-    int blocks = n_points / (threads_per_block * PTS_PER_THREAD);
-    size_t shmem_size = (threads_per_block * PTS_PER_THREAD * n_dims + SHM_K * SHM_DIM) * sizeof(float); 
+    int blocks = n_points / (threads_per_block);
+    size_t shmem_size = (threads_per_block * n_dims + SHM_K * SHM_DIM) * sizeof(float); 
 
     host_to_device_init_transfer(
         points, &d_points,
@@ -83,8 +83,8 @@ void call_fused_assignment_recenter_kernels(float *points, float *centroids, uin
 
     int threads_per_block = 16;
 
-    int blocks_fused = n_points / (threads_per_block * PTS_PER_THREAD);
-    size_t shmem_size = (threads_per_block * PTS_PER_THREAD * n_dims + SHM_K * SHM_DIM) * sizeof(float); 
+    int blocks_fused = n_points / (threads_per_block);
+    size_t shmem_size = (threads_per_block * n_dims + SHM_K * SHM_DIM) * sizeof(float); 
 
     int calcs_per_thread = 16;
     int blocks_reduce_divide = n_centroids * n_dims / (threads_per_block * calcs_per_thread);
