@@ -14,7 +14,7 @@ void host_to_device_init_transfer(
     cudaMalloc(d_points,      n_points * n_dims * sizeof(float));
     cudaMalloc(d_centroids,   n_centroids * n_dims * sizeof(float));
     cudaMalloc(d_assignments, n_points * sizeof(uint32_t));
-    cudaMalloc(d_accumulator, n_centroids * n_dims * sizeof(float));
+    cudaMalloc(d_accumulator, n_centroids * n_dims * NUM_PRIV_COPIES * sizeof(float));
     cudaMalloc(d_sizes,       n_centroids * sizeof(uint32_t));
     cudaMalloc(d_n_points,    sizeof(uint32_t));
     cudaMalloc(d_n_centroids, sizeof(uint32_t));
@@ -25,6 +25,8 @@ void host_to_device_init_transfer(
     cudaMemcpy(*d_n_points,    &n_points,    sizeof(uint32_t),                     cudaMemcpyHostToDevice);
     cudaMemcpy(*d_n_centroids, &n_centroids, sizeof(uint32_t),                     cudaMemcpyHostToDevice);
     cudaMemcpy(*d_n_dims,      &n_dims, 	 sizeof(uint32_t),                     cudaMemcpyHostToDevice);
+
+    cudaMemset(d_accumulator, 0, n_centroids * n_dims * NUM_PRIV_COPIES * sizeof(float));
 }
 
 void device_to_host_transfer_free(
@@ -157,7 +159,7 @@ __global__ void compute_assignments_kernel(
     }
 }
 
-__device__ float *__restrict__ get_privatized_pointer(
+__device__ float* get_privatized_pointer(
     float *ptr, 
     uint32_t n_vecs, 
     uint32_t n_dims) {
@@ -167,6 +169,7 @@ __device__ float *__restrict__ get_privatized_pointer(
     int wid = tid / warpSize;
     
     // All processors in the same warp assigned to the same copy
+    // since they write to consecutive elements
     res += (n_vecs * n_dims) * (wid % NUM_PRIV_COPIES);
 
     return res;
@@ -239,15 +242,16 @@ __global__ void accumulate_cluster_members_kernel(
 
     for(int i = tid; i < size; i += n_threads) {
         
+        int idx = i / D;
         int dim = i % D;
+
         float val = points[i];
-        int cluster = assignments[i];
-        float *centroid_val_ptr = &priv_centroids[cluster * D + dim];
+        int cluster = assignments[idx];
+        float *centroid_val_ptr = priv_centroids + cluster * D + dim;
 
         atomicAdd(centroid_val_ptr, val);
-
         if(dim == 0) {
-            atomicInc(&counts[cluster], ~0);
+            atomicAdd(&counts[cluster], 1);
         }
     }
 }
@@ -259,8 +263,13 @@ KMeansResult Dataset::kmeans_cuda(uint32_t n_centroids, uint32_t max_iters, floa
 
     vector<float> time_per_iter;
 
-    int threads_per_block = 5;
-    int blocks = n_points / (threads_per_block * PTS_PER_THREAD);
+    int threads_per_block = 16;
+    int blocks_assignment = n_points / (threads_per_block * PTS_PER_THREAD);
+    
+    int calcs_per_thread = 16;
+    int blocks_accumulate = n_points * n_dims / (threads_per_block * calcs_per_thread);
+    int blocks_reduce_divide = n_centroids * n_dims / (threads_per_block * calcs_per_thread);
+
     size_t shmem_size = (threads_per_block * PTS_PER_THREAD * n_dims + SHM_K * SHM_DIM) * sizeof(float); 
 
     float *d_points, *d_centroids, *d_accumulator;
@@ -276,7 +285,8 @@ KMeansResult Dataset::kmeans_cuda(uint32_t n_centroids, uint32_t max_iters, floa
         n_dims, &d_n_dims
     );
 
-    compute_assignments_kernel<<< blocks, threads_per_block, shmem_size >>> (d_points, d_centroids, d_assignments, d_n_points, d_n_centroids, d_n_dims);
+    compute_assignments_kernel<<< blocks_assignment, threads_per_block, shmem_size >>> (d_points, d_centroids, d_assignments, d_n_points, d_n_centroids, d_n_dims);
+    accumulate_cluster_members_kernel<<< blocks_accumulate, threads_per_block >>> (d_points, d_accumulator, d_assignments, d_sizes, d_n_points, d_n_centroids, d_n_dims);
 
     cudaDeviceSynchronize();
 

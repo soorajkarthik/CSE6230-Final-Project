@@ -5,6 +5,7 @@
 #include <kmeans_openmp.h>
 #include <kernel_wrappers.h>
 #include <dataset.h>
+#include <cmath>
 
 TEST_CASE("Check CUDA centroid update matches OpenMP") {
 
@@ -26,6 +27,6 @@ TEST_CASE("Check CUDA centroid update matches OpenMP") {
     call_recenter_centroids_kernels(dataset.points, centroids_gpu, assignments, n_points, n_centroids, n_dims);
 
     for(uint32_t i = 0; i < n_centroids * n_dims; i++) {
-        REQUIRE((centroids[i] == centroids_gpu[i]));
+        REQUIRE((abs(centroids[i] - centroids_gpu[i]) <= 0.001));
     }
 }

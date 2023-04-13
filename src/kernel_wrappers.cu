@@ -54,7 +54,7 @@ void call_recenter_centroids_kernels(float *points, float *centroids, uint32_t *
     );
 
     cudaMemcpy(d_assignments, assignments, n_points * sizeof(uint32_t), cudaMemcpyHostToDevice);
-    cudaMemset(d_accumulator, 0, n_centroids * n_dims * sizeof(float));
+    cudaMemset(d_accumulator, 0, n_centroids * n_dims * NUM_PRIV_COPIES * sizeof(float));
     cudaMemset(d_sizes, 0, n_centroids * sizeof(uint32_t));
 
     accumulate_cluster_members_kernel<<<blocks_accumulate, threads_per_block >>>(d_points, d_accumulator, d_assignments, d_sizes, d_n_points, d_n_centroids, d_n_dims);
@@ -65,6 +65,8 @@ void call_recenter_centroids_kernels(float *points, float *centroids, uint32_t *
     
     divide_centroids_kernel<<< blocks_reduce_divide, threads_per_block >>>(d_accumulator, d_sizes, d_n_centroids, d_n_dims);
     cudaDeviceSynchronize();
+
+    cudaMemcpy(d_centroids, d_accumulator, n_centroids * n_dims * sizeof(float), cudaMemcpyDeviceToDevice);
 
     device_to_host_transfer_free(
         points, &d_points,
