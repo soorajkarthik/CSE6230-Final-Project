@@ -70,3 +70,17 @@ float compute_loss(float *points, float *centroids, uint32_t *assignments, uint3
 
     return loss;
 }
+
+void CpuTimer::start() {
+    start_time = chrono::steady_clock::now();
+}
+
+void CpuTimer::stop() {
+    end_time = chrono::steady_clock::now();
+}
+
+float CpuTimer::elapsed_time() {
+    chrono::duration<float> duration;
+    duration = chrono::duration_cast<chrono::milliseconds>(end_time - start_time);
+    return duration.count();
+}
