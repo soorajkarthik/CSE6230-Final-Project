@@ -40,8 +40,6 @@ KMeansResult Dataset::kmeans_cuda(uint32_t n_centroids, uint32_t max_iters, bool
     int blocks_accumulate = CEIL_DIV(n_points * n_dims, (THREADS_PER_BLOCK * CALCS_PER_THREAD));
     int blocks_reduce_divide = CEIL_DIV(n_centroids * n_dims, (THREADS_PER_BLOCK * CALCS_PER_THREAD));
 
-    size_t shmem_size = (THREADS_PER_BLOCK * n_dims + SHM_K * SHM_DIM) * sizeof(float); 
-
     float *d_points, *d_centroids, *d_accumulator;
     uint32_t *d_assignments, *d_counts, *d_n_points, *d_n_centroids, *d_n_dims;
     
@@ -60,11 +58,11 @@ KMeansResult Dataset::kmeans_cuda(uint32_t n_centroids, uint32_t max_iters, bool
         timer.start();
 
         if(fused_kernel) {
-            fused_assignment_accumulate_kernel<<< blocks_assignment, THREADS_PER_BLOCK, shmem_size >>> (
+            fused_assignment_accumulate_kernel<<< blocks_assignment, THREADS_PER_BLOCK >>> (
                 d_points, d_centroids, d_accumulator, d_assignments, d_counts, d_n_points, d_n_centroids, d_n_dims);
         } else {
             
-            compute_assignments_kernel<<< blocks_assignment, THREADS_PER_BLOCK, shmem_size >>> (
+            compute_assignments_kernel<<< blocks_assignment, THREADS_PER_BLOCK >>> (
                 d_points, d_centroids, d_assignments, d_n_points, d_n_centroids, d_n_dims);
 
             accumulate_cluster_members_kernel<<< blocks_accumulate, THREADS_PER_BLOCK >>> (

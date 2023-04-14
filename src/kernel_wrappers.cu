@@ -9,7 +9,6 @@ void call_compute_assignments_kernel(float *points, float *centroids, uint32_t *
 
     int threads_per_block = 16;
     int blocks = n_points / (threads_per_block);
-    size_t shmem_size = (threads_per_block * n_dims + SHM_K * SHM_DIM) * sizeof(float); 
 
     host_to_device_init_transfer(
         points, &d_points,
@@ -21,7 +20,7 @@ void call_compute_assignments_kernel(float *points, float *centroids, uint32_t *
         n_dims, &d_n_dims
     );
 
-    compute_assignments_kernel<<< blocks, threads_per_block, shmem_size >>> (d_points, d_centroids, d_assignments, d_n_points, d_n_centroids, d_n_dims);
+    compute_assignments_kernel<<< blocks, threads_per_block >>> (d_points, d_centroids, d_assignments, d_n_points, d_n_centroids, d_n_dims);
 
     cudaDeviceSynchronize();
 
@@ -84,7 +83,6 @@ void call_fused_assignment_recenter_kernels(float *points, float *centroids, uin
     int threads_per_block = 16;
 
     int blocks_fused = n_points / (threads_per_block);
-    size_t shmem_size = (threads_per_block * n_dims + SHM_K * SHM_DIM) * sizeof(float); 
 
     int calcs_per_thread = 16;
     int blocks_reduce_divide = n_centroids * n_dims / (threads_per_block * calcs_per_thread);
@@ -99,7 +97,7 @@ void call_fused_assignment_recenter_kernels(float *points, float *centroids, uin
         n_dims, &d_n_dims
     );
 
-    fused_assignment_accumulate_kernel<<< blocks_fused, threads_per_block, shmem_size >>>(d_points, d_centroids, d_accumulator, d_assignments, d_counts, d_n_points, d_n_centroids, d_n_dims);
+    fused_assignment_accumulate_kernel<<< blocks_fused, threads_per_block >>>(d_points, d_centroids, d_accumulator, d_assignments, d_counts, d_n_points, d_n_centroids, d_n_dims);
     reduce_private_copies_kernel<<< blocks_reduce_divide, threads_per_block >>>(d_accumulator, d_n_centroids, d_n_dims);
     divide_centroids_kernel<<< blocks_reduce_divide, threads_per_block >>>(d_accumulator, d_counts, d_n_centroids, d_n_dims);
 
