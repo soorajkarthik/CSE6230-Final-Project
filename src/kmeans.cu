@@ -40,11 +40,12 @@ KMeansResult Dataset::kmeans_cuda(uint32_t n_centroids, uint32_t max_iters, bool
     int blocks_accumulate = CEIL_DIV(n_points * n_dims, (THREADS_PER_BLOCK * CALCS_PER_THREAD));
     int blocks_reduce_divide = CEIL_DIV(n_centroids * n_dims, (THREADS_PER_BLOCK * CALCS_PER_THREAD));
 
+    float *transposed_points = get_tranposed_points();
     float *d_points, *d_centroids, *d_accumulator;
     uint32_t *d_assignments, *d_counts, *d_n_points, *d_n_centroids, *d_n_dims;
     
     host_to_device_init_transfer(
-        points, &d_points,
+        transposed_points, &d_points,
         centroids, &d_centroids,
         assignments, &d_assignments,
         &d_accumulator, &d_counts,
@@ -84,7 +85,7 @@ KMeansResult Dataset::kmeans_cuda(uint32_t n_centroids, uint32_t max_iters, bool
     cudaDeviceSynchronize();
 
     device_to_host_transfer_free(
-        points, &d_points,
+        transposed_points, &d_points,
         centroids, &d_centroids,
         assignments, &d_assignments,
         &d_accumulator, &d_counts,
