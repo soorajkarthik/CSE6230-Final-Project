@@ -24,7 +24,7 @@ TEST_CASE("Check CUDA fused assignment and centroid update matches OpenMP") {
 
     // Cuda fused assignment and recenter
     uint32_t *cuda_assignments = new uint32_t[n_points];
-    call_fused_assignment_recenter_kernels(dataset.points, cuda_centroids, cuda_assignments, n_points, n_centroids, n_dims);
+    call_fused_assignment_recenter_kernels(dataset.get_tranposed_points(), cuda_centroids, cuda_assignments, n_points, n_centroids, n_dims);
 
     for(uint32_t i = 0; i < n_points; i++) {
         REQUIRE((omp_assignments[i] == cuda_assignments[i]));

@@ -9,12 +9,11 @@ __global__ void compute_assignments_kernel(
     uint32_t const *__restrict__ n_centroids,
     uint32_t const *__restrict__ n_dims) {
 
-    uint32_t K = *n_centroids, D = *n_dims;
+    uint32_t N = *n_points, K = *n_centroids, D = *n_dims;
 
     volatile __shared__ float shm_centroids[SHM_K][SHM_DIM];
 
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
-    int point_offset = tid * D;
 
     float dists[SHM_K];
     float min_dist = 1e30;
@@ -53,7 +52,7 @@ __global__ void compute_assignments_kernel(
                 for(d = 0; d < SHM_DIM; d++) {
 
                     float centroid_val = shm_centroids[k][d];
-                    float val = centroid_val - points[point_offset + (d + d_block)];
+                    float val = centroid_val - points[tid + (d + d_block) * N];
                     dists[k] += val * val;
                 }
             }
@@ -158,8 +157,8 @@ __global__ void accumulate_cluster_members_kernel(
 
     for(int i = tid; i < size; i += n_threads) {
         
-        int idx = i / D;
-        int dim = i % D;
+        int idx = i % N;
+        int dim = i / N;
 
         float val = points[i];
         int cluster = assignments[idx];
@@ -182,12 +181,11 @@ __global__ void fused_assignment_accumulate_kernel(
     uint32_t const *__restrict__ n_centroids,
     uint32_t const *__restrict__ n_dims) {
 
-    uint32_t K = *n_centroids, D = *n_dims;
+    uint32_t N = *n_points, K = *n_centroids, D = *n_dims;
 
     volatile __shared__ float shm_centroids[SHM_K][SHM_DIM];
 
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
-    int point_offset = tid * D;
 
     float dists[SHM_K];
     float min_dist = 1e30;
@@ -226,7 +224,7 @@ __global__ void fused_assignment_accumulate_kernel(
                 for(d = 0; d < SHM_DIM; d++) {
 
                     float centroid_val = shm_centroids[k][d];
-                    float val = centroid_val - points[point_offset + (d + d_block)];
+                    float val = centroid_val - points[tid + (d + d_block) * N];
                     dists[k] += val * val;
                 }
             }
@@ -251,7 +249,7 @@ __global__ void fused_assignment_accumulate_kernel(
     // Accumulate 
     float *priv_accumulator = get_privatized_pointer(accumulator, K, D);
     for(uint32_t d = 0; d < D; d++) {
-        float val = points[point_offset + d];
+        float val = points[tid + d * N];
         float *acc_val_ptr = &priv_accumulator[local_assignment * D + d];
         atomicAdd(acc_val_ptr, val);
     }

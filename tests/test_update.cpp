@@ -24,7 +24,7 @@ TEST_CASE("Check CUDA centroid update matches OpenMP") {
     recenter_centroids(dataset.points, centroids, assignments, n_points, n_centroids, n_dims);
 
     // Cuda recenter
-    call_recenter_centroids_kernels(dataset.points, centroids_gpu, assignments, n_points, n_centroids, n_dims);
+    call_recenter_centroids_kernels(dataset.get_tranposed_points(), centroids_gpu, assignments, n_points, n_centroids, n_dims);
 
     for(uint32_t i = 0; i < n_centroids * n_dims; i++) {
         REQUIRE((abs(centroids[i] - centroids_gpu[i]) <= 0.001));

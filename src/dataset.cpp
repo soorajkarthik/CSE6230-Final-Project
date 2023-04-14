@@ -61,6 +61,17 @@ float* Dataset::random_points(uint32_t num) {
     return res;
 }
 
+float* Dataset::get_tranposed_points() {
+    float *transposed = new float[n_points * n_dims];
+    for(uint32_t i = 0; i < n_points; i++) {
+        for(uint32_t j = 0; j < n_dims; j++) {
+            transposed[j * n_points + i] = points[i * n_dims + j];
+        }
+    }
+
+    return transposed;
+}
+
 KMeansResult::KMeansResult(float *centroids, uint32_t n_centroids, uint32_t *assignments, vector<float> time_per_iter) {
     this->centroids = centroids;
     this->n_centroids = n_centroids;
