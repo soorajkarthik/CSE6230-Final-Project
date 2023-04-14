@@ -69,7 +69,6 @@ void CpuTimer::stop() {
 }
 
 float CpuTimer::elapsed_time() {
-    chrono::duration<float> duration;
-    duration = chrono::duration_cast<chrono::milliseconds>(end_time - start_time);
+    chrono::duration<float, milli> duration = end_time - start_time;
     return duration.count();
 }

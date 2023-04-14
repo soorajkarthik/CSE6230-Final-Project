@@ -53,9 +53,12 @@ void device_to_host_transfer_free(
     cudaFree(&d_n_dims);
 }
 
-void CudaTimer::start() {
+CudaTimer::CudaTimer() {
     cudaEventCreate(&start_event);
     cudaEventCreate(&stop_event);
+}
+
+void CudaTimer::start() {
     cudaEventRecord(start_event, 0);
 }
 

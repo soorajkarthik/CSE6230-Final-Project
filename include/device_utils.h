@@ -28,6 +28,8 @@ class CudaTimer {
         cudaEvent_t stop_event;
 
     public:
+        CudaTimer();
+        
         void start();
         void stop();
         float elapsed_time();

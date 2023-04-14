@@ -2,12 +2,12 @@
 #include <consts.h>
 
 __global__ void compute_assignments_kernel(
-    float *__restrict__ points, 
-    float *__restrict__ centroids, 
-    uint32_t *__restrict__ assignments, 
-    uint32_t *__restrict__ n_points, 
-    uint32_t *__restrict__ n_centroids, 
-    uint32_t *__restrict__ n_dims) {
+    float const *__restrict__ points,
+    float const *__restrict__ centroids,
+    uint32_t *__restrict__ assignments,
+    uint32_t const *__restrict__ n_points,
+    uint32_t const *__restrict__ n_centroids,
+    uint32_t const *__restrict__ n_dims) {
 
     uint32_t K = *n_centroids, D = *n_dims;
 
@@ -27,6 +27,7 @@ __global__ void compute_assignments_kernel(
     float dists[SHM_K];
     float min_dist = 1e30;
     uint32_t local_assignment;
+    int k, d;
 
     // Load points into shared memory
     #pragma unroll
@@ -47,7 +48,6 @@ __global__ void compute_assignments_kernel(
         for(int d_block = 0; d_block < D; d_block += SHM_DIM) {
 
             // Load centroids into shared memory
-            int k, d, p;
             for(int shm_idx = threadIdx.x; shm_idx < SHM_K * SHM_DIM; shm_idx += blockDim.x) {
                 
                 k = shm_idx / SHM_DIM;
@@ -77,7 +77,7 @@ __global__ void compute_assignments_kernel(
 
         // Reassign
         #pragma unroll
-        for(int k = 0; k < SHM_K; k++) {
+        for(k = 0; k < SHM_K; k++) {
             if(min_dist > dists[k]) {
                 min_dist = dists[k];
                 local_assignment = k + k_block;
@@ -106,9 +106,9 @@ __device__ float* get_privatized_pointer(
 } 
 
 __global__ void reduce_private_copies_kernel(
-    float *result, 
-    uint32_t *n_centroids, 
-    uint32_t *n_dims) {
+    float *__restrict__ result, 
+    uint32_t const *__restrict__ n_centroids, 
+    uint32_t const *__restrict__ n_dims) {
 
     uint32_t K = *n_centroids, D = *n_dims;
 
@@ -132,10 +132,10 @@ __global__ void reduce_private_copies_kernel(
 }
 
 __global__ void divide_centroids_kernel(
-    float *centroids, 
-    uint32_t *counts, 
-    uint32_t *n_centroids, 
-    uint32_t *n_dims) {
+    float *__restrict__ centroids, 
+    uint32_t const *__restrict__ counts, 
+    uint32_t const *__restrict__ n_centroids, 
+    uint32_t const *__restrict__ n_dims) {
 
     uint32_t K = *n_centroids, D = *n_dims;
 
@@ -154,13 +154,13 @@ __global__ void divide_centroids_kernel(
 }
 
 __global__ void accumulate_cluster_members_kernel(
-    float *points, 
-    float *accumulator, 
-    uint32_t *assignments, 
-    uint32_t *counts, 
-    uint32_t *n_points,
-    uint32_t *n_centroids,
-    uint32_t *n_dims) {
+    float const *__restrict__ points, 
+    float *__restrict__ accumulator, 
+    uint32_t const *__restrict__ assignments, 
+    uint32_t *__restrict__ counts, 
+    uint32_t const *__restrict__ n_points,
+    uint32_t const *__restrict__ n_centroids,
+    uint32_t const *__restrict__ n_dims) {
 
     uint32_t N = *n_points, K = *n_centroids, D = *n_dims;
 
@@ -187,14 +187,14 @@ __global__ void accumulate_cluster_members_kernel(
 }
 
 __global__ void fused_assignment_accumulate_kernel(    
-    float *points, 
-    float *centroids, 
-    float *accumulator, 
-    uint32_t *assignments, 
-    uint32_t *counts,
-    uint32_t *n_points,
-    uint32_t *n_centroids,
-    uint32_t *n_dims) {
+    float const *__restrict__ points, 
+    float const *__restrict__ centroids, 
+    float *__restrict__ accumulator, 
+    uint32_t *__restrict__ assignments, 
+    uint32_t *__restrict__ counts,
+    uint32_t const *__restrict__ n_points,
+    uint32_t const *__restrict__ n_centroids,
+    uint32_t const *__restrict__ n_dims) {
 
     uint32_t K = *n_centroids, D = *n_dims;
 
@@ -214,6 +214,7 @@ __global__ void fused_assignment_accumulate_kernel(
     float dists[SHM_K];
     float min_dist = 1e30;
     uint32_t local_assignment;
+    int k, d;
 
     // Load points into shared memory
     #pragma unroll
@@ -234,7 +235,6 @@ __global__ void fused_assignment_accumulate_kernel(
         for(int d_block = 0; d_block < D; d_block += SHM_DIM) {
 
             // Load centroids into shared memory
-            int k, d, p;
             for(int shm_idx = threadIdx.x; shm_idx < SHM_K * SHM_DIM; shm_idx += blockDim.x) {
                 
                 k = shm_idx / SHM_DIM;
@@ -264,7 +264,7 @@ __global__ void fused_assignment_accumulate_kernel(
 
         // Reassign
         #pragma unroll
-        for(int k = 0; k < SHM_K; k++) {
+        for(k = 0; k < SHM_K; k++) {
             if(min_dist > dists[k]) {
                 min_dist = dists[k];
                 local_assignment = k + k_block;
