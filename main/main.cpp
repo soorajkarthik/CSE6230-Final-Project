@@ -23,15 +23,15 @@ int main(int argc, char** argv) {
     uint32_t n_iters = arg_iters.getValue();
     uint32_t n_points = arg_points.getValue();
     uint32_t n_dims = arg_dims.getValue();
-    uint32_t n_centroids = arg_dims.getValue();
+    uint32_t n_centroids = arg_centroids.getValue();
     bool write_output = arg_write_output.getValue();
 
-    cout << "Initializing dataset..." << endl;
+    cout << "Initializing dataset with shape (" << n_points << ", " << n_dims << ")..." << endl;
 
     Dataset dataset(n_points, n_dims, n_centroids);
     KMeansResult result;
 
-    cout << "Running " << n_iters << " iterations of \"" << alg << "\" algorithm..." << endl;
+    cout << "Running " << n_iters << " iterations of \"" << alg << "\" algorithm with " << n_centroids << " centroids..." << endl;
 
     if(alg == "openmp") {
         result = dataset.kmeans_openmp(n_centroids, n_iters);
