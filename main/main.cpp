@@ -1,29 +1,57 @@
-#include <cstdio>
 #include <dataset.h>
 #include <io.h>
 #include <iostream>
+#include <tclap/CmdLine.h>
 
-int main(int argc, char *argv[]) {
+int main(int argc, char** argv) {
 
-    uint32_t n_iters = 100, n_points = 4000, n_dims = 2, n_centroids = 16;
-    bool cuda_fused_kernel = false;
+    TCLAP::CmdLine cmd("Accelerated KMeans Clustering", (char)32, "0.1");
 
-    Dataset d(n_points, n_dims, n_centroids);
+    vector<string> allowed_algs = {"openmp", "cudamulti", "cudafused"};
+    TCLAP::ValuesConstraint<string> constraint_algs(allowed_algs);
 
-    KMeansResult res_openmp = d.kmeans_openmp(n_centroids, n_iters);
-    write_to_file(argv[1], d, res_openmp);
+    TCLAP::ValueArg<string> arg_algs("a", "alg", "algorithm to use", false, "openmp", &constraint_algs, cmd);
+    TCLAP::ValueArg<uint32_t> arg_iters("i", "iters", "number of iterations to run", false, 100, "int", cmd);
+    TCLAP::ValueArg<uint32_t> arg_points("n", "points", "number of points to input", false, 100000, "int", cmd);
+    TCLAP::ValueArg<uint32_t> arg_centroids("k", "centroids", "number of centroids to use", false, 32, "int", cmd);
+    TCLAP::ValueArg<uint32_t> arg_dims("d", "dims", "dimensionality of input data", false, 32, "int", cmd);
+    TCLAP::SwitchArg arg_write_output("s", "save", "whether or not to save output to file", cmd, false);
 
-    KMeansResult res_cuda = d.kmeans_cuda(n_centroids, n_iters, cuda_fused_kernel);
-    write_to_file(argv[2], d, res_cuda);
+    cmd.parse(argc, argv);
 
-    float cpu_time = 0, gpu_time = 0;
-    for(uint32_t i = 0; i < n_iters; i++) {
-        cpu_time += res_openmp.time_per_iter[i];
-        gpu_time += res_cuda.time_per_iter[i];
+    string alg = arg_algs.getValue();
+    uint32_t n_iters = arg_iters.getValue();
+    uint32_t n_points = arg_points.getValue();
+    uint32_t n_dims = arg_dims.getValue();
+    uint32_t n_centroids = arg_dims.getValue();
+    bool write_output = arg_write_output.getValue();
+
+    cout << "Initializing dataset..." << endl;
+
+    Dataset dataset(n_points, n_dims, n_centroids);
+    KMeansResult result;
+
+    cout << "Running " << n_iters << " iterations of \"" << alg << "\" algorithm..." << endl;
+
+    if(alg == "openmp") {
+        result = dataset.kmeans_openmp(n_centroids, n_iters);
+    } else if (alg == "cudamulti") {
+        result = dataset.kmeans_cuda(n_centroids, n_iters, false);
+    } else if (alg == "cudafused") {
+        result = dataset.kmeans_cuda(n_centroids, n_iters, true);
     }
 
-    cpu_time /= n_iters;
-    gpu_time /= n_iters;
+    if(write_output) {
+        cout << "Writing results to kmeans_out.txt..." << endl;
+        write_to_file("kmeans_out.txt", dataset, result);
+    }
 
-    printf("Avg CPU Time: %f\nAvg GPU Time: %f\n", cpu_time, gpu_time);
+    float avg_time = 0;
+    for(uint32_t i = 0; i < n_iters; i++) {
+        avg_time += result.time_per_iter[i];
+    }
+
+    avg_time /= n_iters;
+
+    cout << "Average time per iteration: " << avg_time << endl;
 }

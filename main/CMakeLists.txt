@@ -1,2 +1,3 @@
 add_executable(main main.cpp)
-target_link_libraries(main PUBLIC kmeans)
+target_include_directories(main PRIVATE ../lib/tclap-code/include)
+target_link_libraries(main PRIVATE kmeans)
